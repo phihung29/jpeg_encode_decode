@@ -51,3 +51,4 @@ def idct(result):
                     image[x, y] = sum * (1 / 4) + 128
 
     return image
+
