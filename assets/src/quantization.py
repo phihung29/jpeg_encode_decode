@@ -1,5 +1,3 @@
-
-from assets.src import DCT
 import numpy as np
 
 qY = [
@@ -24,30 +22,60 @@ qC = [
     [99, 99, 99, 99, 99, 99, 99, 99]
 ]
 
-def quatizeY(pic, quantization_matrix):
-    p = np.zeros_like(pic)
+def quantizeY(pic, quantization_matrix):
+    p = np.zeros_like(pic, dtype=float)
     for i in range(8):
         for j in range(8):
-            p[i][j] = round(pic[i][j] / quantization_matrix[i][j])
-    return p
+            p[i][j] = pic[i][j] / quantization_matrix[i][j]
+    return np.round(p).astype(int)
 
-def quatizeUV(pic, quantization_matrix):
-    p = np.zeros_like(pic)
+def quantizeUV(pic, quantization_matrix):
+    p = np.zeros_like(pic, dtype=float)
     for i in range(8):
         for j in range(8):
-            p[i][j] = round(pic[i][j] / quantization_matrix[i][j])
-    return p
+            p[i][j] = pic[i][j] / quantization_matrix[i][j]
+    return np.round(p).astype(int)
 
-def iQuatizeY(pic, quantization_matrix):
-    p = np.zeros_like(pic)
+def iQuantizeY(pic, quantization_matrix):
+    p = np.zeros_like(pic, dtype=float)
     for i in range(8):
         for j in range(8):
             p[i][j] = pic[i][j] * quantization_matrix[i][j]
-    return p
+    return np.round(p).astype(int)
 
-def iQuatizeUV(pic, quantization_matrix):
-    p = np.zeros_like(pic)
+def iQuantizeImage(img, quantization_matrix):
+    iHeight, iWidth = img.shape
+    result = np.zeros_like(img, dtype=int)
+
+    for startY in range(0, iHeight, 8):
+        for startX in range(0, iWidth, 8):
+            block = img[startY:startY+8, startX:startX+8]
+
+            # Bổ sung dòng và cột để làm cho kích thước thành bội số của 8x8
+            block = pad_image_block(block)
+
+            quantized_block = iQuantizeBlock(block, quantization_matrix)
+
+            result[startY:startY+8, startX:startX+8] = quantized_block
+
+    return result
+
+def iQuantizeBlock(block, quantization_matrix):
+    p = np.zeros_like(block, dtype=float)
     for i in range(8):
         for j in range(8):
-            p[i][j] = pic[i][j] * quantization_matrix[i][j]
-    return p
+            p[i][j] = block[i][j] * quantization_matrix[i][j]
+    return np.round(p).astype(int)
+
+def pad_image_block(block):
+    block_size = 8
+    rows, cols = block.shape
+
+    # Tính toán số dòng và cột cần bổ sung
+    pad_rows = block_size - rows
+    pad_cols = block_size - cols
+
+    # Bổ sung dòng và cột
+    padded_block = np.pad(block, ((0, pad_rows), (0, pad_cols)), mode='constant', constant_values=0)
+
+    return padded_block
