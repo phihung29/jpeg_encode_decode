@@ -50,8 +50,8 @@ def idct(result):
 def dct_image(image):
     height, width = image.shape
     block_size = 8
-    blocks_w = width + (block_size - width % block_size) if width%block_size == 0 else width
-    blocks_h = height + (block_size - height % block_size) if height%block_size == 0 else height
+    blocks_w = width + (block_size - width % block_size) if width%block_size != 0 else width
+    blocks_h = height + (block_size - height % block_size) if height%block_size != 0 else height
 
     new_image = np.zeros((blocks_h, blocks_w))
     new_image[:height, :width] = image
