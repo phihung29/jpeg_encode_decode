@@ -107,10 +107,10 @@ def zig_zag_reverse(array):
 # Driver code
 if __name__ == "__main__":
     # xu ly block
-
-    qtable = np.array([[2, 0, 3, 0, 0, 0, 0, 0,],
-                       [0, 0, 4, 0, 0, 0, 0, 0,],
-                       [0, 5, 0, 0, 0, 0, 0, 0,],
+    # dc ,ac theo rlc
+    qtable = np.array([[200, 4, 3, 0, 0, 0, 0, 0,],
+                       [5, 20, 4, 0, 0, 0, 0, 0,],
+                       [10, 5, 0, 0, 0, 0, 0, 0,],
                        [0, 0, 6, 0, 0, 0, 0, 0,],
                        [0, 0, 0, 0, 0, 0, 0, 0,],
                        [0, 0, 0, 0, 0, 0, 0, 0,],
@@ -130,9 +130,13 @@ if __name__ == "__main__":
 
     codeDC = {}
     HuffmanCodes(probsDPCM,len(dc),codeDC)
+
+
     print("Character With there Frequencies:")
+    # codeDC = sorted(codeDC);
     for key in sorted(codeDC):
         print(key, codeDC[key])
+
 
     encodedStringDC = ""
     decodedStringDC = []
@@ -141,44 +145,44 @@ if __name__ == "__main__":
 
     print("\nEncoded Huffman data:")
     print(encodedStringDC)
-
-
-    rlc1 = []
-    zeros = 0
-    for i in range(1, len(dc)):
-        if (dc[i] == 0):
-            zeros += 1
-        else:
-            rlc1.append(zeros)
-            rlc1.append(dc[i])
-            zeros = 0
-    if(zeros != 0):
-        rlc1.append(zeros)
-        rlc1.append(0)
-    print("RLC/n")
-    print(rlc1)
-    # rlc1 =[1, -2, 1, 2, 3 ,-1, 4,0]
-    # Huffman RLC
-    # Tìm tần suất xuất hiện cho mỗi giá trị của danh sách
-    counterRLC = collections.Counter(rlc1)
-    # Xác định danh sách giá trị dưới dạng danh sách các cặp (điểm, Số lần xuất hiện tương ứng)
-    probsRLC = []
-    for key, value in counterRLC.items():
-        probsRLC.append(MinHeapNode(key, counterRLC[value]))
-
-    codeRLC = {}
-    HuffmanCodes(probsRLC,len(rlc1),codeRLC)
-    print("\nCharacter With there Frequencies:")
-    for key in sorted(codeRLC):
-        print(key, codeRLC[key])
-
-    encodedStringRLC = ""
-    decodedStringRLC = []
-    for i in rlc1:
-        encodedStringRLC += codeRLC[i]
-
-    print("\nEncoded Huffman data:")
-    print(encodedStringRLC)
+    #
+    #
+    # rlc1 = []
+    # zeros = 0
+    # for i in range(1, len(dc)):
+    #     if (dc[i] == 0):
+    #         zeros += 1
+    #     else:
+    #         rlc1.append(zeros)
+    #         rlc1.append(dc[i])
+    #         zeros = 0
+    # if(zeros != 0):
+    #     rlc1.append(zeros)
+    #     rlc1.append(0)
+    # print("RLC/n")
+    # print(rlc1)
+    # # rlc1 =[1, -2, 1, 2, 3 ,-1, 4] 0 -2 0 2 0 0 0 -1
+    # # Huffman RLC
+    # # Tìm tần suất xuất hiện cho mỗi giá trị của danh sách
+    # counterRLC = collections.Counter(rlc1)
+    # # Xác định danh sách giá trị dưới dạng danh sách các cặp (điểm, Số lần xuất hiện tương ứng)
+    # probsRLC = []
+    # for key, value in counterRLC.items():
+    #     probsRLC.append(MinHeapNode(key, counterRLC[value]))
+    #
+    # codeRLC = {}
+    # HuffmanCodes(probsRLC,len(rlc1),codeRLC)
+    # print("\nCharacter With there Frequencies:")
+    # for key in sorted(codeRLC):
+    #     print(key, codeRLC[key])
+    #
+    # encodedStringRLC = ""
+    # decodedStringRLC = []
+    # for i in rlc1:
+    #     encodedStringRLC += codeRLC[i]
+    #
+    # print("\nEncoded Huffman data:")
+    # print(encodedStringRLC)
 
 
     # Function call
@@ -186,9 +190,9 @@ if __name__ == "__main__":
     print("\nDecoded Huffman Data:")
     print(decodedStringDC)
     # print(zig_zag_reverse(decodedStringDC))
-
+    a = zig_zag_reverse(decodedStringDC);
     print(zig_zag_reverse(decodedStringDC))
-    # Function call
+    # # Function call
     decodedStringRLC = decode_file(probsRLC[0], encodedStringRLC)
     print("\nDecoded Huffman Data:")
     print(decodedStringRLC)

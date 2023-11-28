@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 # dct block 8x8
 def dct(array):
     result = np.zeros_like(array)
+    array = array - 128
     # dct row
     for i in range(8):
         for u in range(8):

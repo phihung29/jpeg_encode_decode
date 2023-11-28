@@ -1,44 +1,58 @@
 import collections
 
-from assets.src import quantization
+from assets.src import *
 from assets.src.DCT import *
 from assets.src.huffman import *
 import matplotlib.pyplot as plt
-
+from quantization import *
 def main() -> object:
     # Load and preprocess the image
     image = cv2.imread('../image/lena.jpg', cv2.IMREAD_GRAYSCALE)
-    result = dct(image)
+    # result = dct(image) ????
 
-    # Original and Reconstructed images (for comparison)
-    original_image = image.copy()
 
-    # Display the original image
-    plt.gray()
-    plt.subplot(231), plt.imshow(original_image), plt.axis('off'), plt.title('Original Image', size=10)
 
-    # Display the DCT result before quantization
-    plt.subplot(232), plt.imshow(result), plt.axis('off'), plt.title('DCT Result', size=10)
+    height, width = image.shape
+    block_size = 8
+    blocks_w = width + (block_size - width % block_size) if width % block_size != 0 else width
+    blocks_h = height + (block_size - height % block_size) if height % block_size != 0 else height
 
-    # Quantization
-    quantization_factor = 10
-    quantized_result_Y = quantization.quantizeY(result, quantization_factor * quantization.qY)
-    quantized_result_UV = quantization.quantizeUV(result, quantization_factor * quantization.qC)
+    new_image = np.zeros((blocks_h, blocks_w))
+    new_image[:height, :width] = image
 
-    # Display the quantized DCT result
-    plt.subplot(233), plt.imshow(quantized_result_Y), plt.axis('off'), plt.title('Quantized DCT Result', size=10)
+    new_image = new_image.astype(float)
+    new_image -= 128
 
-    # Dequantize the Y and UV components
-    dequantized_result_Y = quantization.iQuantizeY(quantized_result_Y, quantization_factor * quantization.qY)
-    dequantized_result_UV = quantization.iQuantizeY(quantized_result_UV, quantization_factor * quantization.qC)
-    print("Quantized Y block:\n", quantized_result_Y)
-    print("Dequantized Y block:\n", dequantized_result_Y)
 
-    dc = zig_zag(dequantized_result_Y)
-    print("DC/n")
-    print(dc)
-    # Huffman DPCM
-    # Tìm tần suất xuất hiện cho mỗi giá trị của danh sách
+    zigZag = []
+    for i in range(0, blocks_h, block_size):
+        for j in range(0, blocks_w, block_size):
+            block = new_image[i:i + block_size, j:j + block_size]
+            result[i:i + block_size, j:j + block_size] = dct(block)
+
+            zigZag.append(np.array(zig_zag(quantizeY(dct(block)))))
+
+    dc = []
+    dc.append(zigZag[0][0])  # giữ nguyên giá trị đầu tiên
+    for i in range(1, len(zigZag)):
+        dc.append(zigZag[i][0] - zigZag[i - 1][0])
+
+    # RLC cho giá trị AC
+    rlc = []
+    zeros = 0
+    for i in range(0, len(zigZag)):
+        zeros = 0
+        for j in range(1, len(zigZag[i])):
+            # if (zigZag[i][j] == 0):
+            if np.all(zigZag[i][j] == 0):
+                zeros += 1
+            else:
+                rlc.append(zeros)
+                rlc.append(zigZag[i][j])
+                zeros = 0
+        if (zeros != 0):
+            rlc.append(zeros)
+            rlc.append(0)
     counterDPCM = collections.Counter(dc)
 
     # Xác định danh sách các giá trị dưới dạng danh sách các cặp (điểm, Số lần xuất hiện tương ứng)
@@ -48,9 +62,11 @@ def main() -> object:
 
     codeDC = {}
     HuffmanCodes(probsDPCM, len(dc), codeDC)
-    print("Character With there Frequencies:")
-    for key in sorted(codeDC):
-        print(key, codeDC[key])
+
+    # print("Character With there Frequencies:")
+    # # codeDC = sorted(codeDC);
+    # for key in (codeDC):
+    #     print(key, codeDC[key])
 
     encodedStringDC = ""
     decodedStringDC = []
@@ -60,76 +76,215 @@ def main() -> object:
     print("\nEncoded Huffman data:")
     print(encodedStringDC)
 
-    rlc1 = []
-    zeros = 0
-    for i in range(1, len(dc)):
-        if (dc[i] == 0):
-            zeros += 1
-        else:
-            rlc1.append(zeros)
-            rlc1.append(dc[i])
-            zeros = 0
-    if (zeros != 0):
-        rlc1.append(zeros)
-        rlc1.append(0)
-    print("RLC/n")
-    print(rlc1)
-    # rlc1 =[1, -2, 1, 2, 3 ,-1, 4,0]
     # Huffman RLC
     # Tìm tần suất xuất hiện cho mỗi giá trị của danh sách
-    counterRLC = collections.Counter(rlc1)
+    counterRLC = collections.Counter(rlc)
     # Xác định danh sách giá trị dưới dạng danh sách các cặp (điểm, Số lần xuất hiện tương ứng)
     probsRLC = []
     for key, value in counterRLC.items():
         probsRLC.append(MinHeapNode(key, counterRLC[value]))
 
     codeRLC = {}
-    HuffmanCodes(probsRLC, len(rlc1), codeRLC)
+    HuffmanCodes(probsRLC,len(rlc),codeRLC)
+
+
     print("\nCharacter With there Frequencies:")
     for key in sorted(codeRLC):
         print(key, codeRLC[key])
 
     encodedStringRLC = ""
     decodedStringRLC = []
-    for i in rlc1:
+    for i in rlc:
         encodedStringRLC += codeRLC[i]
 
     print("\nEncoded Huffman data:")
     print(encodedStringRLC)
 
-    # Function call
+    #decode
     decodedStringDC = decode_file(probsDPCM[0], encodedStringDC)
-    print("\nDecoded Huffman Data:")
+    print("\nDecoded DC Huffman Data:")
     print(decodedStringDC)
-    # print(zig_zag_reverse(decodedStringDC))
 
-    print(zig_zag_reverse(decodedStringDC))
-    # Function call
     decodedStringRLC = decode_file(probsRLC[0], encodedStringRLC)
-    print("\nDecoded Huffman Data:")
+    print("\nDecoded AC Huffman Data:")
     print(decodedStringRLC)
 
-    # # Inverse DCT to reconstruct Y and UV components
-    # reconstructed_Y = idct(dequantized_result_Y)
-    # reconstructed_UV = idct(dequantized_result_UV)
+    # Inverse DPCM
+    inverse_DPCM = []
+    if decodedStringDC:
+        inverse_DPCM.append(decodedStringDC[0])  # giá trị đầu tiên giữ nguyên
+
+        for i in range(1, len(decodedStringDC)):
+            inverse_DPCM.append(decodedStringDC[i] + inverse_DPCM[i - 1])
+    print("/n")
+    print(inverse_DPCM)
+    # Inverse RLC
+    inverse_RLC = []
+    for i in range(0, len(decodedStringRLC)):
+        if (i % 2 == 0):
+            if (decodedStringRLC[i] != 0.0):
+                if (i + 1 < len(decodedStringRLC) and decodedStringRLC[i + 1] == 0):
+                    for j in range(1, int(decodedStringRLC[i])):
+                        inverse_RLC.append(0.0)
+                else:
+                    for j in range(0, int(decodedStringRLC[i])):
+                        inverse_RLC.append(0.0)
+        else:
+            inverse_RLC.append(decodedStringRLC[i])
+    print("/n")
+    print(inverse_RLC)
+
+    new_img = np.empty(shape=(height, width))
+    height = 0
+    width = 0
+    temp = []
+    temp2 = []
+    for i in range(0, len(inverse_DPCM)):
+        temp.append(inverse_DPCM[i])
+        for j in range(0, 63):
+            temp.append((inverse_RLC[j + i * 63]))
+        temp2.append(temp)
+
+        # inverse Zig-Zag và nghịch đảo Lượng tử hóa các hệ số DCT
+        inverse_blockq = np.multiply(np.reshape(
+            zig_zag_reverse(temp2), (8, 8)), qtable)
+
+        # inverse DCT
+        inverse_dct = cv2.idct(inverse_blockq, qtable)
+        for startY in range(height, height + 8, 8):
+            for startX in range(width, width + 8, 8):
+                new_img[startY:startY + 8, startX:startX + 8] = inverse_dct
+        width = width + 8
+        if (width == iHeight):
+            width = 0
+            height = height + 8
+        temp = []
+        temp2 = []
+    np.place(new_img, new_img > 255, 255)
+    np.place(new_img, new_img < 0, 0)
 
 
-    # # Display the reconstructed Y and UV components
-    # plt.subplot(234), plt.imshow(reconstructed_Y), plt.axis('off'), plt.title('Reconstructed Y', size=10)
-    # plt.subplot(235), plt.imshow(reconstructed_UV), plt.axis('off'), plt.title('Reconstructed UV', size=10)
+
+# Original and Reconstructed images (for comparison)
+    # original_image = image.copy()
+
+    # Display the original image
+    # plt.gray()
+    # plt.subplot(231), plt.imshow(original_image), plt.axis('off'), plt.title('Original Image', size=10)
+    #
+    # # Display the DCT result before quantization
+    # plt.subplot(232), plt.imshow(result), plt.axis('off'), plt.title('DCT Result', size=10)
+
+    # # Quantization
+    # quantization_factor = 10
+    # quantized_result_Y = quantization.quantizeY(result, quantization_factor * quantization.qY)
+    # quantized_result_UV = quantization.quantizeUV(result, quantization_factor * quantization.qC)
+
+    # # Display the quantized DCT result
+    # plt.subplot(233), plt.imshow(quantized_result_Y), plt.axis('off'), plt.title('Quantized DCT Result', size=10)
+
+    # # Dequantize the Y and UV components
+    # dequantized_result_Y = quantization.iQuantizeY(quantized_result_Y, quantization_factor * quantization.qY)
+    # dequantized_result_UV = quantization.iQuantizeY(quantized_result_UV, quantization_factor * quantization.qC)
+    # print("Quantized Y block:\n", quantized_result_Y)
+    # print("Dequantized Y block:\n", dequantized_result_Y)
+
+    # dc = zig_zag(dequantized_result_Y)
+    # print("DC/n")
+    # print(dc)
+    # # Huffman DPCM
+    # # Tìm tần suất xuất hiện cho mỗi giá trị của danh sách
+    # counterDPCM = collections.Counter(dc)
+    #
+    # # Xác định danh sách các giá trị dưới dạng danh sách các cặp (điểm, Số lần xuất hiện tương ứng)
+    # probsDPCM = []
+    # for key, value in counterDPCM.items():
+    #     probsDPCM.append(MinHeapNode(key, counterDPCM[value]))
+    #
+    # codeDC = {}
+    # HuffmanCodes(probsDPCM, len(dc), codeDC)
+    # print("Character With there Frequencies:")
+    # for key in sorted(codeDC):
+    #     print(key, codeDC[key])
+    #
+    # encodedStringDC = ""
+    # decodedStringDC = []
+    # for i in dc:
+    #     encodedStringDC += codeDC[i]
+    #
+    # print("\nEncoded Huffman data:")
+    # print(encodedStringDC)
+    #
+    # rlc1 = []
+    # zeros = 0
+    # for i in range(1, len(dc)):
+    #     if (dc[i] == 0):
+    #         zeros += 1
+    #     else:
+    #         rlc1.append(zeros)
+    #         rlc1.append(dc[i])
+    #         zeros = 0
+    # if (zeros != 0):
+    #     rlc1.append(zeros)
+    #     rlc1.append(0)
+    # print("RLC/n")
+    # print(rlc1)
+    # # rlc1 =[1, -2, 1, 2, 3 ,-1, 4,0]
+    # # Huffman RLC
+    # # Tìm tần suất xuất hiện cho mỗi giá trị của danh sách
+    # counterRLC = collections.Counter(rlc1)
+    # # Xác định danh sách giá trị dưới dạng danh sách các cặp (điểm, Số lần xuất hiện tương ứng)
+    # probsRLC = []
+    # for key, value in counterRLC.items():
+    #     probsRLC.append(MinHeapNode(key, counterRLC[value]))
+    #
+    # codeRLC = {}
+    # HuffmanCodes(probsRLC, len(rlc1), codeRLC)
+    # print("\nCharacter With there Frequencies:")
+    # for key in sorted(codeRLC):
+    #     print(key, codeRLC[key])
+    #
+    # encodedStringRLC = ""
+    # decodedStringRLC = []
+    # for i in rlc1:
+    #     encodedStringRLC += codeRLC[i]
+    #
+    # print("\nEncoded Huffman data:")
+    # print(encodedStringRLC)
+    #
+    # # Function call
+    # decodedStringDC = decode_file(probsDPCM[0], encodedStringDC)
+    # print("\nDecoded Huffman Data:")
+    # print(decodedStringDC)
+    # # print(zig_zag_reverse(decodedStringDC))
+    #
+    # print(zig_zag_reverse(decodedStringDC))
+    # # Function call
+    # decodedStringRLC = decode_file(probsRLC[0], encodedStringRLC)
+    # print("\nDecoded Huffman Data:")
+    # print(decodedStringRLC)
+    #
+    # # # Inverse DCT to reconstruct Y and UV components
+    # # reconstructed_Y = idct(dequantized_result_Y)
+    # # reconstructed_UV = idct(dequantized_result_UV)
     #
     #
-    # # Combine the Y and UV components to obtain the final reconstructed image
-    # reconstructed_image = cv2.merge([reconstructed_Y, reconstructed_UV, reconstructed_UV])
-
-    # # Convert YCrCb to RGB
-    # reconstructed_image_rgb = cv2.cvtColor(reconstructed_image.astype(np.uint8), cv2.COLOR_YCrCb2RGB)
+    # # # Display the reconstructed Y and UV components
+    # # plt.subplot(234), plt.imshow(reconstructed_Y), plt.axis('off'), plt.title('Reconstructed Y', size=10)
+    # # plt.subplot(235), plt.imshow(reconstructed_UV), plt.axis('off'), plt.title('Reconstructed UV', size=10)
+    # #
+    # #
+    # # # Combine the Y and UV components to obtain the final reconstructed image
+    # # reconstructed_image = cv2.merge([reconstructed_Y, reconstructed_UV, reconstructed_UV])
     #
-    # # Display the final reconstructed image
-    # plt.subplot(236), plt.imshow(reconstructed_image_rgb), plt.axis('off'), plt.title('Reconstructed Image', size=10)
-
-    # Show the plots
-    plt.show()
+    # # # Convert YCrCb to RGB
+    # # reconstructed_image_rgb = cv2.cvtColor(reconstructed_image.astype(np.uint8), cv2.COLOR_YCrCb2RGB)
+    # #
+    # # # Display the final reconstructed image
+    # # plt.subplot(236), plt.imshow(reconstructed_image_rgb), plt.axis('off'), plt.title('Reconstructed Image', size=10)
+    #
+    # # Show the plots
+    # plt.show()
 
 if __name__ == "__main__":
     main()
