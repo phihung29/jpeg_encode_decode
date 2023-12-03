@@ -2,6 +2,7 @@ import heapq
 import collections
 import numpy as np
 
+
 block_size = 8
 
 class MinHeapNode:
@@ -60,9 +61,9 @@ def decode_file(root, s):
 def zig_zag(matrix):
     result = [0] * (block_size * block_size)
     index = 0
-    
+
     for i in range(block_size + block_size - 1):
-        if i % 2 == 0:  # Diagonal going up
+        if i % 2 == 0:  # đường chéo lên
             row = min(i, block_size - 1)
             col = max(0, i - block_size + 1)
             while row >= 0 and col < block_size:
@@ -70,7 +71,7 @@ def zig_zag(matrix):
                 index += 1
                 row -= 1
                 col += 1
-        else:  # Diagonal going down
+        else:  # đường chéo xuống
             col = min(i, block_size - 1)
             row = max(0, i - block_size + 1)
             while col >= 0 and row < block_size:
@@ -84,9 +85,9 @@ def zig_zag(matrix):
 def zig_zag_reverse(array):
     result = [[0] * block_size for _ in range(block_size)]
     index = 0
-    
+
     for i in range(block_size + block_size - 1):
-        if i % 2 == 0:  # Diagonal going up
+        if i % 2 == 0:  # đường chéo lên
             row = min(i, block_size - 1)
             col = max(0, i - block_size + 1)
             while row >= 0 and col < block_size:
@@ -94,7 +95,7 @@ def zig_zag_reverse(array):
                 index += 1
                 row -= 1
                 col += 1
-        else:  # Diagonal going down
+        else:  # Đường chéo xuống
             col = min(i, block_size - 1)
             row = max(0, i - block_size + 1)
             while col >= 0 and row < block_size:
@@ -103,97 +104,3 @@ def zig_zag_reverse(array):
                 col -= 1
                 row += 1
     return result
-
-# Driver code
-if __name__ == "__main__":
-    # xu ly block
-    # dc ,ac theo rlc
-    qtable = np.array([[200, 4, 3, 0, 0, 0, 0, 0,],
-                       [5, 20, 4, 0, 0, 0, 0, 0,],
-                       [10, 5, 0, 0, 0, 0, 0, 0,],
-                       [0, 0, 6, 0, 0, 0, 0, 0,],
-                       [0, 0, 0, 0, 0, 0, 0, 0,],
-                       [0, 0, 0, 0, 0, 0, 0, 0,],
-                       [0, 0, 0, 0, 0, 0, 0, 0,],
-                       [0, 0, 0, 0, 0, 0, 0, 0,]])
-    dc = zig_zag(qtable)
-    print("DC/n")
-    print(dc)
-    # Huffman DPCM
-    # Tìm tần suất xuất hiện cho mỗi giá trị của danh sách
-    counterDPCM = collections.Counter(dc)
-
-    # Xác định danh sách các giá trị dưới dạng danh sách các cặp (điểm, Số lần xuất hiện tương ứng)
-    probsDPCM = []
-    for key, value in counterDPCM.items():
-        probsDPCM.append(MinHeapNode(key, counterDPCM[value]))
-
-    codeDC = {}
-    HuffmanCodes(probsDPCM,len(dc),codeDC)
-
-
-    print("Character With there Frequencies:")
-    # codeDC = sorted(codeDC);
-    for key in sorted(codeDC):
-        print(key, codeDC[key])
-
-
-    encodedStringDC = ""
-    decodedStringDC = []
-    for i in dc:
-        encodedStringDC += codeDC[i]
-
-    print("\nEncoded Huffman data:")
-    print(encodedStringDC)
-    #
-    #
-    # rlc1 = []
-    # zeros = 0
-    # for i in range(1, len(dc)):
-    #     if (dc[i] == 0):
-    #         zeros += 1
-    #     else:
-    #         rlc1.append(zeros)
-    #         rlc1.append(dc[i])
-    #         zeros = 0
-    # if(zeros != 0):
-    #     rlc1.append(zeros)
-    #     rlc1.append(0)
-    # print("RLC/n")
-    # print(rlc1)
-    # # rlc1 =[1, -2, 1, 2, 3 ,-1, 4] 0 -2 0 2 0 0 0 -1
-    # # Huffman RLC
-    # # Tìm tần suất xuất hiện cho mỗi giá trị của danh sách
-    # counterRLC = collections.Counter(rlc1)
-    # # Xác định danh sách giá trị dưới dạng danh sách các cặp (điểm, Số lần xuất hiện tương ứng)
-    # probsRLC = []
-    # for key, value in counterRLC.items():
-    #     probsRLC.append(MinHeapNode(key, counterRLC[value]))
-    #
-    # codeRLC = {}
-    # HuffmanCodes(probsRLC,len(rlc1),codeRLC)
-    # print("\nCharacter With there Frequencies:")
-    # for key in sorted(codeRLC):
-    #     print(key, codeRLC[key])
-    #
-    # encodedStringRLC = ""
-    # decodedStringRLC = []
-    # for i in rlc1:
-    #     encodedStringRLC += codeRLC[i]
-    #
-    # print("\nEncoded Huffman data:")
-    # print(encodedStringRLC)
-
-
-    # Function call
-    decodedStringDC = decode_file(probsDPCM[0], encodedStringDC)
-    print("\nDecoded Huffman Data:")
-    print(decodedStringDC)
-    # print(zig_zag_reverse(decodedStringDC))
-    a = zig_zag_reverse(decodedStringDC);
-    print(zig_zag_reverse(decodedStringDC))
-    # # Function call
-    decodedStringRLC = decode_file(probsRLC[0], encodedStringRLC)
-    print("\nDecoded Huffman Data:")
-    print(decodedStringRLC)
-
