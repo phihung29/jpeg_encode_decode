@@ -1,6 +1,12 @@
 import heapq
 import collections
+import math
 import numpy as np
+import cv2
+import pickle
+
+#todo: gộp ma trận
+#todo:
 
 block_size = 8
 
@@ -14,7 +20,6 @@ class MinHeapNode:
     def __lt__(self, other):
         return self.count < other.count
 
-
 def storeCodes(root, str1,codes):
     if root is None:
         return
@@ -24,8 +29,7 @@ def storeCodes(root, str1,codes):
     storeCodes(root.right, str1 + "1",codes)
 
 
-def HuffmanCodes(minHeap,size,codes):
-
+def HuffmanCodes(minHeap, size, codes):
     heapq.heapify(minHeap)
 
     while len(minHeap) != 1:
@@ -50,7 +54,6 @@ def decode_file(root, s):
 
         # reached leaf node
         if curr.left is None and curr.right is None:
-
             ans.append(curr.data)
             # reset
             curr = root
@@ -104,46 +107,7 @@ def zig_zag_reverse(array):
                 row += 1
     return result
 
-# Driver code
-if __name__ == "__main__":
-    # xu ly block
-
-    qtable = np.array([[2, 0, 3, 0, 0, 0, 0, 0,],
-                       [0, 0, 4, 0, 0, 0, 0, 0,],
-                       [0, 5, 0, 0, 0, 0, 0, 0,],
-                       [0, 0, 6, 0, 0, 0, 0, 0,],
-                       [0, 0, 0, 0, 0, 0, 0, 0,],
-                       [0, 0, 0, 0, 0, 0, 0, 0,],
-                       [0, 0, 0, 0, 0, 0, 0, 0,],
-                       [0, 0, 0, 0, 0, 0, 0, 0,]])
-    dc = zig_zag(qtable)
-    print("DC/n")
-    print(dc)
-    # Huffman DPCM
-    # Tìm tần suất xuất hiện cho mỗi giá trị của danh sách
-    counterDPCM = collections.Counter(dc)
-
-    # Xác định danh sách các giá trị dưới dạng danh sách các cặp (điểm, Số lần xuất hiện tương ứng)
-    probsDPCM = []
-    for key, value in counterDPCM.items():
-        probsDPCM.append(MinHeapNode(key, counterDPCM[value]))
-
-    codeDC = {}
-    HuffmanCodes(probsDPCM,len(dc),codeDC)
-    print("Character With there Frequencies:")
-    for key in sorted(codeDC):
-        print(key, codeDC[key])
-
-    encodedStringDC = ""
-    decodedStringDC = []
-    for i in dc:
-        encodedStringDC += codeDC[i]
-
-    print("\nEncoded Huffman data:")
-    print(encodedStringDC)
-
-
-    rlc1 = []
+def make_rlc(rlc1): 
     zeros = 0
     for i in range(1, len(dc)):
         if (dc[i] == 0):
@@ -155,8 +119,95 @@ if __name__ == "__main__":
     if(zeros != 0):
         rlc1.append(zeros)
         rlc1.append(0)
+
+# Hàm tách theo block
+def block_detacher(matrix, block_size):
+    output_list = []
+    rows, columns = np.shape(matrix)
+    for i in range(0, rows, block_size):
+        for j in range(0, columns, block_size):
+            start_col = i
+            start_row = j
+            child_matrix = matrix[start_row:start_row + block_size, start_col:start_col + block_size]
+            output_list.append(child_matrix)
+    return output_list
+
+# Hàm ghép ma trận
+def block_merger(list, block_size):
+    output_matrix = []
+    matrices = []
+    n = int(len(list) / math.sqrt(len(list)))
+
+    for i in range(0, n):
+        matrices.append(list[i])
+    output_matrix = np.hstack(matrices)
+    matrices = []
+
+    for i in range(1, n):
+        for j in range(0, n):
+            matrices.append(list[i * n + j])
+        matrix_merged_side_by_side = np.hstack(matrices)
+        matrices = []
+        output_matrix = np.vstack((output_matrix, matrix_merged_side_by_side))
+    return output_matrix
+
+def reverse_rlc(rlc):
+    res_matrix = []
+    for i in range(0, len(rlc), 2):
+        for j in range(i):
+            res_matrix.append(0)
+        res_matrix.append(rlc[i+1])
+    return res_matrix
+
+
+
+# Driver code
+if __name__ == "__main__":
+    outputFileName = 'output.pkl'
+    # xu ly block
+    qtable = np.array([[2, 0, 3, 0, 0, 0, 0, 0,],
+                       [0, 0, 4, 0, 0, 0, 0, 0,],
+                       [0, 5, 0, 0, 0, 0, 0, 0,],
+                       [0, 0, 6, 0, 0, 0, 0, 0,],
+                       [0, 0, 0, 0, 0, 0, 0, 0,],
+                       [0, 0, 0, 0, 0, 0, 0, 0,],
+                       [0, 0, 0, 0, 0, 0, 0, 0,],
+                       [0, 0, 0, 0, 0, 0, 0, 0,]])
+
+    dc = zig_zag(qtable)
+    print("DC/n")
+    print(dc)
+    #into_file(outputFileName, dc)
+    # Huffman DPCM
+
+    # Tìm tần suất xuất hiện cho mỗi giá trị của danh sách
+    counterDPCM = collections.Counter(dc)
+
+    # Xác định danh sách các giá trị dưới dạng danh sách các cặp (điểm, Số lần xuất hiện tương ứng)
+    probsDPCM = []
+    for key, value in counterDPCM.items():
+        probsDPCM.append(MinHeapNode(key, counterDPCM[value]))
+
+    codeDC = {}
+    HuffmanCodes(probsDPCM,len(dc),codeDC)
+
+    encodedStringDC = ""
+    decodedStringDC = []
+    for i in dc:
+        encodedStringDC += codeDC[i]
+
+    print("\nEncoded Huffman data:")
+    print(type(encodedStringDC))
+    # into_file(outputFileName, encodedStringDC)
+    #make_file("test.txt", encodedStringDC)
+
+
+    rlc1 = []
+    make_rlc(rlc1)
+    
+
     print("RLC/n")
-    print(rlc1)
+    print(type(rlc1))
     # rlc1 =[1, -2, 1, 2, 3 ,-1, 4,0]
     # Huffman RLC
     # Tìm tần suất xuất hiện cho mỗi giá trị của danh sách
@@ -185,9 +236,8 @@ if __name__ == "__main__":
     decodedStringDC = decode_file(probsDPCM[0], encodedStringDC)
     print("\nDecoded Huffman Data:")
     print(decodedStringDC)
-    # print(zig_zag_reverse(decodedStringDC))
-
     print(zig_zag_reverse(decodedStringDC))
+    
     # Function call
     decodedStringRLC = decode_file(probsRLC[0], encodedStringRLC)
     print("\nDecoded Huffman Data:")
