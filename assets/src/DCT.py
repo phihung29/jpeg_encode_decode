@@ -44,7 +44,7 @@ def idct(result):
                 cu=1/np.sqrt(2) if u ==0 else 1
                 sum+=result[u][j]*cu*np.cos((2*v+1)*np.pi*u/16)
             sum*=1/2
-            reconstruction[v][j]=sum
+            reconstruction[v][j]=sum+128
     return reconstruction
 
 #dct function
@@ -58,7 +58,6 @@ def dct_image(image):
     new_image[:height, :width] = image
 
     new_image = new_image.astype(float)
-    new_image -= 128
 
     result = np.zeros_like(new_image)
 
@@ -78,17 +77,27 @@ def idct_image(result):
     for i in range(0, height, block_size):
         for j in range(0, width, block_size):
             block=result[i:i+block_size,j:j+block_size]
-            image[i:i+block_size,j:j+block_size]=idct(block)+128
+            image[i:i+block_size,j:j+block_size]=idct(block)
     return image
 
 
-image = cv2.imread('../image/lena.jpg', cv2.IMREAD_GRAYSCALE)
-result = dct_image(image)
-reconstruction = idct_image(result)
+image = cv2.imread('../image/lena.jpg')
+image_original = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
+YCbCr_image = cv2.cvtColor(image,cv2.COLOR_BGR2YCrCb)
 
-plt.gray()
-plt.subplot(121), plt.imshow(image), plt.axis('off'), plt.title('Original Image', size=10)
+Y,Cb,Cr = cv2.split(YCbCr_image)
+
+new = cv2.merge([Y,Cb,Cr])
+
+
+
+
+new_image = cv2.cvtColor(YCbCr_image,cv2.COLOR_YCrCb2RGB)
+
+
+
+plt.subplot(121), plt.imshow(image_original), plt.axis('off'), plt.title('Original Image', size=10)
 
 # Hiển thị kết quả DCT trước khi lượng tử hóa
-plt.subplot(122), plt.imshow(reconstruction), plt.axis('off'), plt.title('DCT Result', size=10)
+plt.subplot(122), plt.imshow(new_image), plt.axis('off'), plt.title('DCT Result', size=10)
 plt.show()

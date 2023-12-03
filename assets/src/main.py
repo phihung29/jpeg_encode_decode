@@ -7,8 +7,17 @@ import matplotlib.pyplot as plt
 from quantization import *
 def main() -> object:
     # Load and preprocess the image
+    qtable = np.array([[16, 11, 10, 16, 24, 40, 51, 61],
+                       [12, 12, 14, 19, 26, 58, 60, 55],
+                       [14, 13, 16, 24, 40, 57, 69, 56],
+                       [14, 17, 22, 29, 51, 87, 80, 62],
+                       [18, 22, 37, 56, 68, 109, 103, 77],
+                       [24, 35, 55, 64, 81, 104, 113, 92],
+                       [49, 64, 78, 87, 103, 121, 120, 101],
+                       [72, 92, 95, 98, 112, 100, 103, 99]])
+
     image = cv2.imread('../image/lena.jpg', cv2.IMREAD_GRAYSCALE)
-    # result = dct(image) ????
+
 
 
 
@@ -23,6 +32,7 @@ def main() -> object:
     new_image = new_image.astype(float)
     new_image -= 128
 
+    result = np.zeros((blocks_h, blocks_w))
 
     zigZag = []
     for i in range(0, blocks_h, block_size):
@@ -31,7 +41,7 @@ def main() -> object:
             result[i:i + block_size, j:j + block_size] = dct(block)
 
             zigZag.append(np.array(zig_zag(quantizeY(dct(block)))))
-
+    # [-16,-1,0,2,-11,1,0,....]
     dc = []
     dc.append(zigZag[0][0])  # giữ nguyên giá trị đầu tiên
     for i in range(1, len(zigZag)):
@@ -60,6 +70,7 @@ def main() -> object:
     for key, value in counterDPCM.items():
         probsDPCM.append(MinHeapNode(key, counterDPCM[value]))
 
+
     codeDC = {}
     HuffmanCodes(probsDPCM, len(dc), codeDC)
 
@@ -73,8 +84,8 @@ def main() -> object:
     for i in dc:
         encodedStringDC += codeDC[i]
 
-    print("\nEncoded Huffman data:")
-    print(encodedStringDC)
+    # print("\nEncoded Huffman data:")
+    # print(encodedStringDC)
 
     # Huffman RLC
     # Tìm tần suất xuất hiện cho mỗi giá trị của danh sách
@@ -97,17 +108,17 @@ def main() -> object:
     for i in rlc:
         encodedStringRLC += codeRLC[i]
 
-    print("\nEncoded Huffman data:")
-    print(encodedStringRLC)
+    # print("\nEncoded Huffman data:")
+    # print(encodedStringRLC)
 
-    #decode
+    # #decode
     decodedStringDC = decode_file(probsDPCM[0], encodedStringDC)
-    print("\nDecoded DC Huffman Data:")
-    print(decodedStringDC)
-
+    # print("\nDecoded DC Huffman Data:")
+    # print(decodedStringDC)
+    #
     decodedStringRLC = decode_file(probsRLC[0], encodedStringRLC)
-    print("\nDecoded AC Huffman Data:")
-    print(decodedStringRLC)
+    # print("\nDecoded AC Huffman Data:")
+    # print(decodedStringRLC)
 
     # Inverse DPCM
     inverse_DPCM = []
@@ -116,8 +127,10 @@ def main() -> object:
 
         for i in range(1, len(decodedStringDC)):
             inverse_DPCM.append(decodedStringDC[i] + inverse_DPCM[i - 1])
-    print("/n")
-    print(inverse_DPCM)
+    # print("/n")
+    # print(inverse_DPCM)
+
+
     # Inverse RLC
     inverse_RLC = []
     for i in range(0, len(decodedStringRLC)):
@@ -131,12 +144,12 @@ def main() -> object:
                         inverse_RLC.append(0.0)
         else:
             inverse_RLC.append(decodedStringRLC[i])
-    print("/n")
-    print(inverse_RLC)
+    # print("/n")
+    # print(inverse_RLC)
 
     new_img = np.empty(shape=(height, width))
-    height = 0
-    width = 0
+    iheight = 0
+    iwidth = 0
     temp = []
     temp2 = []
     for i in range(0, len(inverse_DPCM)):
@@ -150,20 +163,26 @@ def main() -> object:
             zig_zag_reverse(temp2), (8, 8)), qtable)
 
         # inverse DCT
-        inverse_dct = cv2.idct(inverse_blockq, qtable)
-        for startY in range(height, height + 8, 8):
-            for startX in range(width, width + 8, 8):
+        inverse_dct = idct(inverse_blockq, qtable)
+        for startY in range(iheight, iheight + 8, 8):
+            for startX in range(iwidth, iwidth + 8, 8):
                 new_img[startY:startY + 8, startX:startX + 8] = inverse_dct
-        width = width + 8
-        if (width == iHeight):
-            width = 0
-            height = height + 8
+        iwidth = iwidth + 8
+        if (iwidth == width):
+            iwidth = 0
+            iheight = iheight + 8
         temp = []
         temp2 = []
     np.place(new_img, new_img > 255, 255)
     np.place(new_img, new_img < 0, 0)
 
 
+
+    plt.subplot(121), plt.imshow(image, cmap='gray'), plt.title('Original Image')
+    plt.xticks([]), plt.yticks([])
+    plt.subplot(122), plt.imshow(new_img, cmap='gray'), plt.title('Image after decompress')
+    plt.xticks([]), plt.yticks([])
+    plt.show()
 
 # Original and Reconstructed images (for comparison)
     # original_image = image.copy()
