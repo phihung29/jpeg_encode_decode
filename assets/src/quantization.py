@@ -36,11 +36,11 @@ def quantizeUV(pic, quantization_matrix):
             p[i][j] = pic[i][j] / quantization_matrix[i][j]
     return np.round(p).astype(int)
 
-def iQuantizeY(pic, quantization_matrix):
+def iQuantizeY(pic):
     p = np.zeros_like(pic, dtype=float)
     for i in range(8):
         for j in range(8):
-            p[i][j] = pic[i][j] * quantization_matrix[i][j]
+            p[i][j] = pic[i][j] * qC[i][j]
     return np.round(p).astype(int)
 
 def iQuantizeImage(img, quantization_matrix):
