@@ -1,13 +1,13 @@
-import collections
+import time
 
-import numpy as np
-
-from assets.src.DCT import *
-from assets.src.huffman import *
+from DCT import *
+from huffman import *
 import matplotlib.pyplot as plt
 from quantization import *
 
+
 def process_channel(image):
+    start = time.time();
     height, width = image.shape
     block_size = 8
     blocks_w = width + (block_size - width % block_size) if width % block_size != 0 else width
@@ -22,9 +22,13 @@ def process_channel(image):
     result = np.zeros((blocks_h, blocks_w))
 
     zigZag = []
+
+
     for i in range(0, blocks_h, block_size):
         for j in range(0, blocks_w, block_size):
+            #chia thanh cac block nho
             block = new_image[i:i + block_size, j:j + block_size]
+            # thuc hien DCT roi gan ket qua vao mang moi
             result[i:i + block_size, j:j + block_size] = dct(block)
 
             zigZag.append(np.array(zig_zag(quantizeY(dct(block)))))
@@ -98,6 +102,9 @@ def process_channel(image):
     # print(encodedStringRLC)
 
     # giai ma
+    stop = time.time();
+    print(" time", stop - start)
+
 
     # #decode
     decodedStringDC = decode_file(probsDPCM[0], encodedStringDC)
@@ -162,29 +169,29 @@ def process_channel(image):
             iheight = iheight + 8
         temp = []
         temp2 = []
+
     return new_img
+
+
 def main() -> object:
     # Load and preprocess the image
     img_path = '../image/lena.jpg'
     old_image = cv2.imread(img_path)
-    original_image = cv2.cvtColor(old_image,cv2.COLOR_BGR2RGB)
+    original_image = cv2.cvtColor(old_image, cv2.COLOR_BGR2RGB)
     image = cv2.cvtColor(old_image, cv2.COLOR_BGR2YCrCb)
 
-
     result = np.zeros_like(image)
-    for i in range(3):
-        result[:,:,i] = process_channel(image[:,:,i])
+    for i in range(1,3):
+        result[:, :, i] = process_channel(image[:, :, i])
+    result[:,:,0] = image[:,:,0]
+    new_img = cv2.cvtColor(result, cv2.COLOR_YCrCb2RGB)
 
-
-
-    new_img = cv2.cvtColor(result,cv2.COLOR_YCrCb2RGB)
     plt.subplot(121), plt.imshow(original_image, cmap='gray'), plt.title('Original Image')
     plt.xticks([]), plt.yticks([])
     plt.subplot(122), plt.imshow(new_img, cmap='gray'), plt.title('Image after decompress')
     plt.xticks([]), plt.yticks([])
     plt.show()
     cv2.imwrite("../image/decompress.jpg", cv2.cvtColor(new_img, cv2.COLOR_RGB2BGR))
-
 
 if __name__ == "__main__":
     main()
