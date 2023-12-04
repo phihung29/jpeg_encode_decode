@@ -80,23 +80,17 @@ def idct_image(result):
     return image
 
 
-# image = cv2.imread('../image/lena.jpg')
-# image_original = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
-# YCbCr_image = cv2.cvtColor(image,cv2.COLOR_BGR2YCrCb)
-#
-# Y,Cb,Cr = cv2.split(YCbCr_image)
-#
-# new = cv2.merge([Y,Cb,Cr])
-#
-#
-#
-#
-# new_image = cv2.cvtColor(YCbCr_image,cv2.COLOR_YCrCb2RGB)
-#
-#
-#
-# plt.subplot(121), plt.imshow(image_original), plt.axis('off'), plt.title('Original Image', size=10)
-#
-# # Hiển thị kết quả DCT trước khi lượng tử hóa
-# plt.subplot(122), plt.imshow(new_image), plt.axis('off'), plt.title('DCT Result', size=10)
-# plt.show()
+if __name__ == '__main__':
+    image = cv2.imread('../image/lena.jpg')
+    image_original = cv2.cvtColor(image,cv2.COLOR_BGR2RGB)
+    YCbCr_image = cv2.cvtColor(image,cv2.COLOR_BGR2YCrCb)
+
+    Y,Cb,Cr = cv2.split(YCbCr_image)
+
+    new = cv2.merge([Y,Cb,Cr])
+    new_image = cv2.cvtColor(YCbCr_image, cv2.COLOR_YCrCb2RGB)
+
+    plt.subplot(121), plt.imshow(image_original), plt.axis('off'), plt.title('Original Image', size=10)
+    # Hiển thị kết quả DCT trước khi lượng tử hóa
+    plt.subplot(122), plt.imshow(new_image), plt.axis('off'), plt.title('DCT Result', size=10)
+    plt.show()
