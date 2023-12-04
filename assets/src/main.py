@@ -1,19 +1,13 @@
 import collections
+
+import numpy as np
+
 from assets.src.DCT import *
 from assets.src.huffman import *
 import matplotlib.pyplot as plt
 from quantization import *
 
-
-def main() -> object:
-    # Load and preprocess the image
-    # original_image = cv2.imread('../image/lena.jpg')
-    # image = cv2.cvtColor(original_image, cv2.COLOR_BGR2YCrCb)
-    image = cv2.imread('../image/lena.jpg', cv2.IMREAD_GRAYSCALE)
-
-
-
-    # for c in range(3):
+def process_channel(image):
     height, width = image.shape
     block_size = 8
     blocks_w = width + (block_size - width % block_size) if width % block_size != 0 else width
@@ -34,7 +28,7 @@ def main() -> object:
             result[i:i + block_size, j:j + block_size] = dct(block)
 
             zigZag.append(np.array(zig_zag(quantizeY(dct(block)))))
-    # [-16,-1,0,2,-11,1,0,....]
+
     dc = []
     dc.append(zigZag[0][0])  # giữ nguyên giá trị đầu tiên
     for i in range(1, len(zigZag)):
@@ -89,8 +83,7 @@ def main() -> object:
         probsRLC.append(MinHeapNode(key, counterRLC[value]))
 
     codeRLC = {}
-    HuffmanCodes(probsRLC,len(rlc),codeRLC)
-
+    HuffmanCodes(probsRLC, len(rlc), codeRLC)
 
     # print("\nCharacter With there Frequencies:")
     # for key in sorted(codeRLC):
@@ -103,7 +96,6 @@ def main() -> object:
 
     # print("\nEncoded Huffman data:")
     # print(encodedStringRLC)
-
 
     # giai ma
 
@@ -125,7 +117,6 @@ def main() -> object:
             inverse_DPCM.append(decodedStringDC[i] + inverse_DPCM[i - 1])
     # print("/n")
     # print(inverse_DPCM)
-
 
     # Inverse RLC
     inverse_RLC = []
@@ -157,32 +148,42 @@ def main() -> object:
         # inverse Zig-Zag và nghịch đảo Lượng tử hóa các hệ số DCT
         inverse_blockq = zig_zag_reverse(temp)
 
-
         # inverse DCT
         inverse_dct = idct(iQuantizeY(inverse_blockq))
-
 
         # for startY in range(iheight, iheight + 8):
         #     for startX in range(iwidth, iwidth + 8):
         #         new_img[startY:startY + 8, startX:startX + 8] = inverse_dct
 
-        new_img[iheight:iheight+8,iwidth:iwidth+8] =inverse_dct
+        new_img[iheight:iheight + 8, iwidth:iwidth + 8] = inverse_dct
         iwidth = iwidth + 8
         if (iwidth == width):
             iwidth = 0
             iheight = iheight + 8
         temp = []
         temp2 = []
-    np.place(new_img, new_img > 255, 255)
-    np.place(new_img, new_img < 0, 0)
+    return new_img
+def main() -> object:
+    # Load and preprocess the image
+    img_path = '../image/lena.jpg'
+    old_image = cv2.imread(img_path)
+    original_image = cv2.cvtColor(old_image,cv2.COLOR_BGR2RGB)
+    image = cv2.cvtColor(old_image, cv2.COLOR_BGR2YCrCb)
 
 
-    plt.subplot(121), plt.imshow(image, cmap='gray'), plt.title('Original Image')
+    result = np.zeros_like(image)
+    for i in range(3):
+        result[:,:,i] = process_channel(image[:,:,i])
+
+
+
+    new_img = cv2.cvtColor(result,cv2.COLOR_YCrCb2RGB)
+    plt.subplot(121), plt.imshow(original_image, cmap='gray'), plt.title('Original Image')
     plt.xticks([]), plt.yticks([])
     plt.subplot(122), plt.imshow(new_img, cmap='gray'), plt.title('Image after decompress')
     plt.xticks([]), plt.yticks([])
     plt.show()
-    cv2.imwrite("decompress.jpg", new_img)
+    cv2.imwrite("../image/decompress.jpg", cv2.cvtColor(new_img, cv2.COLOR_RGB2BGR))
 
 
 if __name__ == "__main__":
